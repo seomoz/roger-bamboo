@@ -1,0 +1,27 @@
+{
+  "Marathon": {
+    "Endpoint": "http://daldevmesos01:8080,http://daldevmesos02:8080,http://daldevmesos03:8080"
+  },
+
+  "Bamboo": {
+    "Endpoint": "http://daldevmesos01:8000",
+    "Zookeeper": {
+      "Host": "daldevmesos01,daldevmesos02,daldevmesos03",
+      "Path": "/bamboo/state",
+      "ReportingDelay": 5
+    }
+  },
+
+  "HAProxy": {
+    "TemplatePath": "/home/arun/github/Roger/ansible/roles/bamboo/files/haproxy_template.cfg",
+    "OutputPath": "/home/arun/opt/software/haproxy.cfg",
+    "ReloadCommand": "PIDS=`pidof haproxy`; haproxy -f /etc/haproxy/haproxy.cfg -p /var/run/haproxy.pid -sf $PIDS && while ps -p $PIDS; do sleep 0.2; done"
+  },
+
+  "StatsD": {
+    "Enabled": false,
+    "Host": "localhost:8125",
+    "Prefix": "bamboo-server.development."
+  }
+}
+
