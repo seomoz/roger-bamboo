@@ -22,6 +22,7 @@ type App struct {
 	EscapedId       string
 	HealthCheckPath string
 	Tasks           []Task
+        TcpPorts        map[string]string
 	ServicePort     int
 	Env             map[string]string
 }
@@ -169,6 +170,18 @@ func createApps(tasksById map[string][]MarathonTask, marathonApps map[string]Mar
 			appPath = "/" + appId
 		}
 
+		// Create the TcpPorts value. If the environment
+		// definition for the app contains the key 'TCP_PORTS'
+		// then the value of the key is used to populate the
+		// TcpPorts field in the App struct. The value is
+		// assumed to be a JSON object in the format {"externalPort1": "PORTXX", "externalPort2": "2123"}
+		var tcp_ports map[string]string
+		if val, ok := marathonApps[appId].Env["TCP_PORTS"]; ok {
+			err := json.Unmarshal([]byte(val), &tcp_ports)
+			if err != nil {
+				panic(err)
+			}
+		}
 		app := App{
 			// Since Marathon 0.7, apps are namespaced with path
 			Id: appPath,
@@ -177,6 +190,7 @@ func createApps(tasksById map[string][]MarathonTask, marathonApps map[string]Mar
 			Tasks:           simpleTasks,
 			HealthCheckPath: parseHealthCheckPath(marathonApps[appId].HealthChecks),
 			Env:             marathonApps[appId].Env,
+		        TcpPorts:        tcp_ports,
 		}
 
 		if len(marathonApps[appId].Ports) > 0 {
