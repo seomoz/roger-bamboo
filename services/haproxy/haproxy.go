@@ -13,7 +13,7 @@ type templateData struct {
 	Services map[string]service.Service
 }
 
-func GetTemplateData(config *conf.Configuration, conn *zk.Conn) interface{} {
+func GetTemplateData(config *conf.Configuration, conn *zk.Conn) templateData {
 
 	apps, _ := marathon.FetchApps(config.Marathon)
 	services, _ := service.All(conn, config.Bamboo.Zookeeper)

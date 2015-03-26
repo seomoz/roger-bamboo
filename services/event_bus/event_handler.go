@@ -1,13 +1,14 @@
 package event_bus
 
 import (
-	"log"
 	"github.com/samuel/go-zookeeper/zk"
 	"github.com/seomoz/roger-bamboo/configuration"
 	"github.com/seomoz/roger-bamboo/services/haproxy"
-	"os/exec"
 	"github.com/seomoz/roger-bamboo/services/template"
 	"io/ioutil"
+	"log"
+	"os/exec"
+	"reflect"
 )
 
 type MarathonEvent struct {
@@ -50,7 +51,9 @@ func init() {
 		log.Println("Starting update loop ...")
 		for {
 			h := <-updateChan
+			log.Println("Got request for new update")
 			handleHAPUpdate(h.Conf, h.Zookeeper)
+			log.Println("Finished processing new update")
 		}
 	} ()
 }
@@ -71,9 +74,8 @@ func queueUpdate(h *Handlers) {
 	<-queueUpdateSem
 }
 
+var oldTemplateData interface{}
 func handleHAPUpdate(conf *configuration.Configuration, conn *zk.Conn) bool {
-	currentContent, _ := ioutil.ReadFile(conf.HAProxy.OutputPath)
-
 	templateContent, err := ioutil.ReadFile(conf.HAProxy.TemplatePath)
 	if err != nil { log.Panicf("Cannot read template file: %s", err) }
 
@@ -83,10 +85,16 @@ func handleHAPUpdate(conf *configuration.Configuration, conn *zk.Conn) bool {
 
 	if err != nil { log.Fatalf("Template syntax error: \n %s", err ) }
 
-	if (currentContent == nil || string(currentContent) != newContent) {
+	if (!reflect.DeepEqual(oldTemplateData, templateData)) {
 		err := ioutil.WriteFile(conf.HAProxy.OutputPath, []byte(newContent), 0666)
-		if err != nil { log.Fatalf("Failed to write template on path: %s", err) }
-
+		if err != nil {
+			log.Fatalf("Failed to write template on path: %s", err)
+			return false
+		}
+		// Now that the config file corresponding to the new
+		// template data has been written, update the
+		// oldTemplateData variable with the new data.
+		oldTemplateData = templateData
 		err = execCommand(conf.HAProxy.ReloadCommand)
 		if err != nil {
 			log.Fatalf("HAProxy: update failed\n")
@@ -105,7 +113,8 @@ func execCommand(cmd string) error {
 	output, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		log.Println(err.Error())
-		log.Println("Output:\n" + string(output[:]))
+		log.Println("Problem executing command Output:\n" + string(output[:]))
 	}
+	log.Println("Finished running command")
 	return err
 }
