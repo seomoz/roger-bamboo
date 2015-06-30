@@ -76,12 +76,12 @@ func main() {
 	ticker := time.Tick(30 * time.Second)
 	go func() {
 		for {
-			<- ticker
+			<-ticker
 			// Simulate a service event to write out the HAproxy config initially
 			log.Println("Simulating service event....")
 			eventBus.Publish(event_bus.ServiceEvent{EventType: "change"})
 		}
-	} ()
+	}()
 
 	// Start server
 	initServer(&conf, zkConn, eventBus)
@@ -98,6 +98,10 @@ func initServer(conf *configuration.Configuration, conn *zk.Conn, eventBus *even
 	conf.StatsD.Increment(1.0, "restart", 1)
 	// Status live information
 	goji.Get("/status", api.HandleStatus)
+
+	// Current config and it's hash
+	goji.Get("/config", event_bus.GetCurrentConfig)
+	goji.Get("/confighash", event_bus.GetCurrentConfigHash)
 
 	// State API
 	goji.Get("/api/state", stateAPI.Get)

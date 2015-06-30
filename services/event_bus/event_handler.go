@@ -1,14 +1,19 @@
 package event_bus
 
 import (
+	"fmt"
 	"github.com/samuel/go-zookeeper/zk"
 	"github.com/seomoz/roger-bamboo/configuration"
 	"github.com/seomoz/roger-bamboo/services/haproxy"
 	"github.com/seomoz/roger-bamboo/services/template"
+	"hash/fnv"
+	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os/exec"
 	"reflect"
+	"strings"
 )
 
 type MarathonEvent struct {
@@ -19,7 +24,7 @@ type MarathonEvent struct {
 }
 
 type ZookeeperEvent struct {
-	Source string
+	Source    string
 	EventType string
 }
 
@@ -28,7 +33,7 @@ type ServiceEvent struct {
 }
 
 type Handlers struct {
-	Conf *configuration.Configuration
+	Conf      *configuration.Configuration
 	Zookeeper *zk.Conn
 }
 
@@ -46,8 +51,22 @@ func (h *Handlers) ServiceEventHandler(event ServiceEvent) {
 
 var updateChan = make(chan *Handlers, 1)
 
+var currentConfig = ""
+var currentConfigHash = ""
+var hasher = fnv.New64a() // The hash function
+
+/* Called by the webserver to report the hash of the current config. */
+func GetCurrentConfigHash(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, currentConfigHash)
+}
+
+/* Called by the webserver to report the current config file. */
+func GetCurrentConfig(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, currentConfig)
+}
+
 func init() {
-	go func () {
+	go func() {
 		log.Println("Starting update loop ...")
 		for {
 			h := <-updateChan
@@ -55,37 +74,54 @@ func init() {
 			handleHAPUpdate(h.Conf, h.Zookeeper)
 			log.Println("Finished processing new update")
 		}
-	} ()
+	}()
 }
 
 var queueUpdateSem = make(chan int, 1)
 
 func queueUpdate(h *Handlers) {
 	queueUpdateSem <- 1
-
 	select {
-		case _ = <-updateChan:
-			log.Println("Found pending update request. Don't start another one.")
-		default:
-			log.Println("Queuing an haproxy update.")
+	case _ = <-updateChan:
+		log.Println("Found pending update request. Don't start another one.")
+	default:
+		log.Println("Queuing an haproxy update.")
 	}
 	updateChan <- h
-
 	<-queueUpdateSem
 }
 
 var oldTemplateData interface{}
+
 func handleHAPUpdate(conf *configuration.Configuration, conn *zk.Conn) bool {
 	templateContent, err := ioutil.ReadFile(conf.HAProxy.TemplatePath)
-	if err != nil { log.Panicf("Cannot read template file: %s", err) }
+	if err != nil {
+		log.Panicf("Cannot read template file: %s", err)
+	}
+
+	// The first line in the template just contains the time the
+	// template was rendered. The rest of the template is
+	// idempotent and only relies on the data we get from
+	// marathon. To report the hash of the rendered config, we
+	// create a second template which omits the first line (and
+	// hence the part which can differ across machines). The
+	// second template is used to compute the hash.
+	idempotentTemplate := strings.Replace(string(templateContent), "# Template rendered at {{ getTime }}", "", 1)
 
 	templateData := haproxy.GetTemplateData(conf, conn)
 
 	newContent, err := template.RenderTemplate(conf.HAProxy.TemplatePath, string(templateContent), templateData)
+	if err != nil {
+		log.Fatalf("Template syntax error: \n %s", err)
+	}
 
-	if err != nil { log.Fatalf("Template syntax error: \n %s", err ) }
+	newIdempotentContent, err := template.RenderTemplate("IdempotentTemplate",
+		string(idempotentTemplate), templateData)
+	if err != nil {
+		log.Fatalf("Idempotent Template syntax error: \n %s", err)
+	}
 
-	if (!reflect.DeepEqual(oldTemplateData, templateData)) {
+	if !reflect.DeepEqual(oldTemplateData, templateData) {
 		err := ioutil.WriteFile(conf.HAProxy.OutputPath, []byte(newContent), 0666)
 		if err != nil {
 			log.Fatalf("Failed to write template on path: %s", err)
@@ -100,6 +136,11 @@ func handleHAPUpdate(conf *configuration.Configuration, conn *zk.Conn) bool {
 			log.Fatalf("HAProxy: update failed\n")
 		} else {
 			log.Println("HAProxy: Configuration updated")
+			// Now that the HAproxy config has been
+			// updated, start exporting the new values.
+			currentConfig = newIdempotentContent
+			hasher.Write([]byte(currentConfig))
+			currentConfigHash = fmt.Sprintf("%X", hasher.Sum64())
 		}
 		return true
 	} else {
