@@ -1,6 +1,7 @@
 package event_bus
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/samuel/go-zookeeper/zk"
 	"github.com/seomoz/roger-bamboo/configuration"
@@ -53,7 +54,8 @@ var updateChan = make(chan *Handlers, 1)
 
 var currentConfig = ""
 var currentConfigHash = ""
-var hasher = fnv.New64a() // The hash function
+var hasher = fnv.New64a()                    // The hash function
+var currentTemplateData haproxy.TemplateData // The current data from Marathon
 
 /* Called by the webserver to report the hash of the current config. */
 func GetCurrentConfigHash(w http.ResponseWriter, r *http.Request) {
@@ -63,6 +65,17 @@ func GetCurrentConfigHash(w http.ResponseWriter, r *http.Request) {
 /* Called by the webserver to report the current config file. */
 func GetCurrentConfig(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, currentConfig)
+}
+
+/* Called by the webserver to report the list of currently used ports. */
+func GetUsedPorts(w http.ResponseWriter, r *http.Request) {
+	var buf bytes.Buffer
+	for _, app := range currentTemplateData.Apps {
+		for port, _ := range app.TcpPorts {
+			buf.WriteString(fmt.Sprintf("%s : %s \n", port, app.Id))
+		}
+	}
+	io.WriteString(w, buf.String())
 }
 
 func init() {
@@ -90,8 +103,6 @@ func queueUpdate(h *Handlers) {
 	updateChan <- h
 	<-queueUpdateSem
 }
-
-var oldTemplateData interface{}
 
 func handleHAPUpdate(conf *configuration.Configuration, conn *zk.Conn) bool {
 	templateContent, err := ioutil.ReadFile(conf.HAProxy.TemplatePath)
@@ -121,7 +132,7 @@ func handleHAPUpdate(conf *configuration.Configuration, conn *zk.Conn) bool {
 		log.Fatalf("Idempotent Template syntax error: \n %s", err)
 	}
 
-	if !reflect.DeepEqual(oldTemplateData, templateData) {
+	if !reflect.DeepEqual(currentTemplateData, templateData) {
 		err := ioutil.WriteFile(conf.HAProxy.OutputPath, []byte(newContent), 0666)
 		if err != nil {
 			log.Fatalf("Failed to write template on path: %s", err)
@@ -129,8 +140,8 @@ func handleHAPUpdate(conf *configuration.Configuration, conn *zk.Conn) bool {
 		}
 		// Now that the config file corresponding to the new
 		// template data has been written, update the
-		// oldTemplateData variable with the new data.
-		oldTemplateData = templateData
+		// currentTemplateData variable with the new data.
+		currentTemplateData = templateData
 		err = execCommand(conf.HAProxy.ReloadCommand)
 		if err != nil {
 			log.Fatalf("HAProxy: update failed\n")

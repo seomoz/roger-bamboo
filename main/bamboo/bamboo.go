@@ -103,6 +103,9 @@ func initServer(conf *configuration.Configuration, conn *zk.Conn, eventBus *even
 	goji.Get("/config", event_bus.GetCurrentConfig)
 	goji.Get("/confighash", event_bus.GetCurrentConfigHash)
 
+	// Currently used ports
+	goji.Get("/usedports", event_bus.GetUsedPorts)
+
 	// State API
 	goji.Get("/api/state", stateAPI.Get)
 
