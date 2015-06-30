@@ -8,15 +8,15 @@ import (
 	"github.com/seomoz/roger-bamboo/services/service"
 )
 
-type templateData struct {
+type TemplateData struct {
 	Apps     marathon.AppList
 	Services map[string]service.Service
 }
 
-func GetTemplateData(config *conf.Configuration, conn *zk.Conn) templateData {
+func GetTemplateData(config *conf.Configuration, conn *zk.Conn) TemplateData {
 
 	apps, _ := marathon.FetchApps(config.Marathon)
 	services, _ := service.All(conn, config.Bamboo.Zookeeper)
 
-	return templateData{apps, services}
+	return TemplateData{apps, services}
 }
