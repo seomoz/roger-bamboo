@@ -152,6 +152,7 @@ func handleHAPUpdate(conf *configuration.Configuration, conn *zk.Conn) bool {
 			currentConfig = newIdempotentContent
 			hasher.Write([]byte(currentConfig))
 			currentConfigHash = fmt.Sprintf("%X", hasher.Sum64())
+			hasher.Reset()
 		}
 		return true
 	} else {
