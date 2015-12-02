@@ -1,6 +1,6 @@
 ![bamboo-logo](https://cloud.githubusercontent.com/assets/37033/4110258/a8cc58bc-31ef-11e4-87c9-dd20bd2468c2.png)
 
-roger-bamboo is a service discovey and distributed load balancing
+moz-bamboo is a service discovey and distributed load balancing
 system for Roger, Moz's ClusterOS. It is based on
 [Bamboo](https://github.com/QubitProducts/bamboo). Roger-bamboo adds
 several features to Bamboo including, flexible TCP and HTTP port
@@ -87,7 +87,7 @@ If `port_description` is a number then its returned as is. If
   "container": {
     "type": "DOCKER",
     "docker": {
-      "image": "daldevmesos03:5000/ncat-v1",
+      "image": "docker-registry-machine:5000/ncat-v1",
       "network": "BRIDGE",
       "portMappings": [
 	{
