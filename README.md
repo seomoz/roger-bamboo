@@ -87,7 +87,7 @@ If `port_description` is a number then its returned as is. If
   "container": {
     "type": "DOCKER",
     "docker": {
-      "image": "daldevmesos03:5000/ncat-v1",
+      "image": "docker-registry-machine:5000/ncat-v1",
       "network": "BRIDGE",
       "portMappings": [
 	{

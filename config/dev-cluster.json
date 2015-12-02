@@ -1,12 +1,12 @@
 {
   "Marathon": {
-    "Endpoint": "http://daldevmesos01:8080,http://daldevmesos02:8080,http://daldevmesos03:8080"
+    "Endpoint": "http://machine01:8080,http://machine02:8080,http://machine03:8080"
   },
 
   "Bamboo": {
     "Endpoint": "http://localhost:8000",
     "Zookeeper": {
-      "Host": "daldevmesos01,daldevmesos02,daldevmesos03",
+      "Host": "machine01,machine02,machine03",
       "Path": "/bamboo/state",
       "ReportingDelay": 5
     }
