@@ -111,7 +111,7 @@ If `port_description` is a number then its returned as is. If
   "uris": [],
   "env": {
       "TCP_PORTS": "{ \"3300\": \"PORT0\", \"3301\": \"PORT1\", \"3303\": \"21222\"}",
-	  "HHTP_PORT": "PORT0"
+	  "HTTP_PORT": "PORT0"
   }
 }
 ```
