@@ -43,7 +43,7 @@ A deb package will be generated in `./builder` directory. You can copy to a serv
 
 Moreover, there is
 - a [Docker build container](builder/build.sh) which will generate the deb package in the volume mounted output directory.
-- and a [vagrant vm](Vagrantfile) where you could call docker build and docker run.
+- and a [vagrant vm](Vagrantfile) where you could call docker build and docker run and build an ubuntu 14.04 binary.
 ```
 vagrant up
 vagrant ssh

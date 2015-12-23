@@ -1,5 +1,3 @@
-# -*- mode: ruby -*-
-# vi: set ft=ruby :
 
 nodes = [
   { :hostname => 'junction-builder.local', :ip => '192.168.100.100', :mem => 1024, :cpus => 1 }
