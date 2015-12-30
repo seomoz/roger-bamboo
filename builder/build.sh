@@ -32,7 +32,7 @@ function bootstrap() {
 function build() {
 
     # Prepare binary at /opt/bamboo/bamboo
-    cp ${origdir}/bamboo ${name}/${installdir}/bamboo/bamboo
+    cp ${origdir}/roger-bamboo ${name}/${installdir}/bamboo/bamboo
     chmod 755 ${name}/${installdir}/bamboo/bamboo
 
     # Link default confiugration

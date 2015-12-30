@@ -41,6 +41,19 @@ go build bamboo.go
 
 A deb package will be generated in `./builder` directory. You can copy to a server or publish to your own apt repository.
 
+Moreover, there is
+- a [Docker build container](builder/build.sh) which will generate the deb package in the volume mounted output directory.
+- and a [vagrant vm](Vagrantfile) where you could call docker build and docker run and build an ubuntu 14.04 binary.
+```
+vagrant up
+vagrant ssh
+cd /vagrant
+sudo docker build -f Dockerfile-deb -t bamboo-build .
+sudo docker run -it -v $(pwd)/output:/output -e "_BAMBOO_VERSION=1.0.3" bamboo-build
+```
+
+Independently of how you build the deb package, you can copy it to a server or publish to your own apt repository.
+
 The example deb package deploys:
 
 * Upstart job [`bamboo-server`](https://github.com/QubitProducts/bamboo/blob/master/builder/bamboo-server), e.g. upstart assumes `/var/bamboo/production.json` is configured correctly.
@@ -111,7 +124,7 @@ If `port_description` is a number then its returned as is. If
   "uris": [],
   "env": {
       "TCP_PORTS": "{ \"3300\": \"PORT0\", \"3301\": \"PORT1\", \"3303\": \"21222\"}",
-	  "HHTP_PORT": "PORT0"
+	  "HTTP_PORT": "PORT0"
   }
 }
 ```
@@ -129,5 +142,3 @@ Port 3301 on HAProxy will map to the second port defined in the ports array.
 Port 3303 on HAProxy will map to port 21222 on each machine where the ncat task is running.
 
 The url path /ncat will map to the first port defined in the ports array.
-
-
