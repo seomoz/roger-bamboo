@@ -15,7 +15,7 @@ ADD . /opt/go/src/github.com/seomoz/roger-bamboo
 
 WORKDIR /opt/go/src/github.com/seomoz/roger-bamboo
 
-RUN RUN go version && \
+RUN go version && \
     go get github.com/tools/godep && \
     go get -t github.com/smartystreets/goconvey && \
     cp -r Godeps/_workspace/src/* /opt/go/src/ && \
