@@ -87,7 +87,7 @@ func getVersionHash(appId string, version string) string {
 	return fmt.Sprintf("%X", hash)
 }
 
-/* Replaces "/" with "::"*/
+/* Replaces "/" with "::" */
 func escapeSlashes(someString string) string {
 	return strings.Replace(someString, "/", "::", -1)
 }
