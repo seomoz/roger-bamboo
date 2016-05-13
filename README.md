@@ -1,6 +1,6 @@
 ![bamboo-logo](https://cloud.githubusercontent.com/assets/37033/4110258/a8cc58bc-31ef-11e4-87c9-dd20bd2468c2.png)
 
-roger-bamboo is a service discovey and distributed load balancing
+roger-bamboo is a service discovery and distributed load balancing
 system for Roger, Moz's ClusterOS. It is based on
 [Bamboo](https://github.com/QubitProducts/bamboo). Roger-bamboo adds
 several features to Bamboo including, flexible TCP and HTTP port
