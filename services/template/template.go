@@ -78,6 +78,7 @@ func getServerHash(escapeId string, host string, port int) string {
 	return fmt.Sprintf("%X", hash)
 }
 
+/* Compute a hash for the given 2 strings */
 func getVersionHash(appId string, version string) string {
 	hasher.Write([]byte(appId))
 	hasher.Write([]byte(version))
