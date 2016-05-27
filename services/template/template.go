@@ -19,6 +19,7 @@ import (
 var taskPortRegex = regexp.MustCompile("^PORT([\\d]+)$")
 var numPortRegex = regexp.MustCompile("^[\\d]+$")
 var hasher = fnv.New32a()
+var hasher64 = fnv.New64a()
 
 func hasKey(data map[string]service.Service, appId string) bool {
 	_, exists := data[appId]
@@ -78,12 +79,11 @@ func getServerHash(escapeId string, host string, port int) string {
 	return fmt.Sprintf("%X", hash)
 }
 
-/* Compute a hash for the given 2 strings */
-func getVersionHash(appId string, version string) string {
-	hasher.Write([]byte(appId))
-	hasher.Write([]byte(version))
-	hash := hasher.Sum32()
-	hasher.Reset()
+/* Compute a hash for the given string */
+func getHash(str string) string {
+	hasher64.Write([]byte(str))
+	hash := hasher64.Sum64()
+	hasher64.Reset()
 	return fmt.Sprintf("%X", hash)
 }
 
@@ -120,7 +120,7 @@ func getConditionsDescending(backendrules map[string]string) []string {
 	Returns string content of a rendered template
 */
 func RenderTemplate(templateName string, templateContent string, data interface{}) (string, error) {
-	funcMap := template.FuncMap{"hasKey": hasKey, "getService": getService, "getTime": getTime, "getTaskPort": getTaskPort, "getServerHash": getServerHash, "getVersionHash": getVersionHash, "escapeSlashes": escapeSlashes, "addAcl": addAcl, "addBackendRule": addBackendRule, "getConditionsDescending": getConditionsDescending }
+	funcMap := template.FuncMap{"hasKey": hasKey, "getService": getService, "getTime": getTime, "getTaskPort": getTaskPort, "getServerHash": getServerHash, "getHash": getHash, "escapeSlashes": escapeSlashes, "addAcl": addAcl, "addBackendRule": addBackendRule, "getConditionsDescending": getConditionsDescending }
 
 	tpl := template.Must(template.New(templateName).Funcs(funcMap).Parse(templateContent))
 
