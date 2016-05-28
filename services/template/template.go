@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"text/template"
 	"time"
+	"strings"
+	"sort"
 )
 
 // The set of regexes defining valid port descriptions. a valid
@@ -17,6 +19,7 @@ import (
 var taskPortRegex = regexp.MustCompile("^PORT([\\d]+)$")
 var numPortRegex = regexp.MustCompile("^[\\d]+$")
 var hasher = fnv.New32a()
+var hasher64 = fnv.New64a()
 
 func hasKey(data map[string]service.Service, appId string) bool {
 	_, exists := data[appId]
@@ -76,11 +79,48 @@ func getServerHash(escapeId string, host string, port int) string {
 	return fmt.Sprintf("%X", hash)
 }
 
+/* Compute a hash for the given string */
+func getHash(str string) string {
+	hasher64.Write([]byte(str))
+	hash := hasher64.Sum64()
+	hasher64.Reset()
+	return fmt.Sprintf("%X", hash)
+}
+
+/* Replaces "/" with "::" */
+func escapeSlashes(someString string) string {
+	return strings.Replace(someString, "/", "::", -1)
+}
+
+/* Adds the acl into the acls set */
+func addAcl(acls map[string]bool, acl string) string {
+	acls[acl] = true
+	return ""
+}
+
+/* Adds (updates) the backed rule (as value) for the given condition (as key) into the backend rule map */
+func addBackendRule(backendrules map[string]string, backend string, condition string) string {
+	backendrules[condition] = backend
+	return ""
+}
+
+/* Returns the conditions (keys) in descending order from backendrules map */
+func getConditionsDescending(backendrules map[string]string) []string {
+	conditions := make([]string, len(backendrules))
+	i := 0
+	for k := range backendrules {
+		conditions[i] = k
+		i++
+	}
+	sort.Sort(sort.Reverse(sort.StringSlice(conditions)))
+	return conditions
+}
+
 /*
 	Returns string content of a rendered template
 */
 func RenderTemplate(templateName string, templateContent string, data interface{}) (string, error) {
-	funcMap := template.FuncMap{"hasKey": hasKey, "getService": getService, "getTime": getTime, "getTaskPort": getTaskPort, "getServerHash": getServerHash}
+	funcMap := template.FuncMap{"hasKey": hasKey, "getService": getService, "getTime": getTime, "getTaskPort": getTaskPort, "getServerHash": getServerHash, "getHash": getHash, "escapeSlashes": escapeSlashes, "addAcl": addAcl, "addBackendRule": addBackendRule, "getConditionsDescending": getConditionsDescending }
 
 	tpl := template.Must(template.New(templateName).Funcs(funcMap).Parse(templateContent))
 
