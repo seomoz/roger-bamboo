@@ -68,6 +68,8 @@ func GetCurrentConfig(w http.ResponseWriter, r *http.Request) {
 	msg := ""
 	if isConfigStale {
 		msg = "## WARNING - Haproxy config may be stale. ## -- This line is not part of the config.\n\n"
+	} else {
+		msg = ""
 	}
 	io.WriteString(w, msg + currentConfig)
 }
@@ -137,6 +139,8 @@ func handleHAPUpdate(conf *configuration.Configuration, conn *zk.Conn) bool {
 		isConfigStale = true
 		log.Println("Got no Apps in template data. Skipped haproxy update")
 		return false
+	} else {
+		isConfigStale = false
 	}
 
 	newContent, err := template.RenderTemplate(conf.HAProxy.TemplatePath, string(templateContent), templateData)
@@ -165,7 +169,6 @@ func handleHAPUpdate(conf *configuration.Configuration, conn *zk.Conn) bool {
 			isConfigStale = true
 			log.Fatalf("HAProxy: update failed\n")
 		} else {
-			isConfigStale = false
 			log.Println("HAProxy: Configuration updated")
 			// Now that the HAproxy config has been
 			// updated, start exporting the new values.
