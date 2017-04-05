@@ -133,15 +133,15 @@ func handleHAPUpdate(conf *configuration.Configuration, conn *zk.Conn) bool {
 
 	templateData := haproxy.GetTemplateData(conf, conn)
 
-  // Any empty updates from Marathon will not result in any Haproxy updates.
+        // Any empty updates from Marathon will not result in any Haproxy updates.
 	// Haproxy will continue to use previous state.
-  if templateData.Apps == nil || len(templateData.Apps) == 0 {
+        if templateData.Apps == nil || len(templateData.Apps) == 0 {
 		isConfigStale = true
 		log.Println("Got no Apps in template data. Skipped haproxy update")
 		return false
-	} else {
-		isConfigStale = false
 	}
+
+        isConfigStale = false
 
 	newContent, err := template.RenderTemplate(conf.HAProxy.TemplatePath, string(templateContent), templateData)
 	if err != nil {
