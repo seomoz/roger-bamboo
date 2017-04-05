@@ -52,6 +52,7 @@ func (h *Handlers) ServiceEventHandler(event ServiceEvent) {
 
 var updateChan = make(chan *Handlers, 1)
 
+var isConfigStale = true
 var currentConfig = ""
 var currentConfigHash = ""
 var hasher = fnv.New64a()                    // The hash function
@@ -64,7 +65,13 @@ func GetCurrentConfigHash(w http.ResponseWriter, r *http.Request) {
 
 /* Called by the webserver to report the current config file. */
 func GetCurrentConfig(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, currentConfig)
+	msg := ""
+	if isConfigStale {
+		msg = "## WARNING - Haproxy config may be stale. ## -- This line is not part of the config.\n\n"
+	} else {
+		msg = ""
+	}
+	io.WriteString(w, msg + currentConfig)
 }
 
 /* Called by the webserver to report the list of currently used ports. */
@@ -110,6 +117,11 @@ func handleHAPUpdate(conf *configuration.Configuration, conn *zk.Conn) bool {
 		log.Panicf("Cannot read template file: %s", err)
 	}
 
+	if currentConfig == "" {
+		outputPathContent, _ := ioutil.ReadFile(conf.HAProxy.OutputPath)
+		currentConfig = string(outputPathContent)
+	}
+
 	// The first line in the template just contains the time the
 	// template was rendered. The rest of the template is
 	// idempotent and only relies on the data we get from
@@ -120,6 +132,16 @@ func handleHAPUpdate(conf *configuration.Configuration, conn *zk.Conn) bool {
 	idempotentTemplate := strings.Replace(string(templateContent), "# Template rendered at {{ getTime }}", "", 1)
 
 	templateData := haproxy.GetTemplateData(conf, conn)
+
+  // Any empty updates from Marathon will not result in any Haproxy updates.
+	// Haproxy will continue to use previous state.
+  if templateData.Apps == nil || len(templateData.Apps) == 0 {
+		isConfigStale = true
+		log.Println("Got no Apps in template data. Skipped haproxy update")
+		return false
+	} else {
+		isConfigStale = false
+	}
 
 	newContent, err := template.RenderTemplate(conf.HAProxy.TemplatePath, string(templateContent), templateData)
 	if err != nil {
@@ -144,6 +166,7 @@ func handleHAPUpdate(conf *configuration.Configuration, conn *zk.Conn) bool {
 		currentTemplateData = templateData
 		err = execCommand(conf.HAProxy.ReloadCommand)
 		if err != nil {
+			isConfigStale = true
 			log.Fatalf("HAProxy: update failed\n")
 		} else {
 			log.Println("HAProxy: Configuration updated")

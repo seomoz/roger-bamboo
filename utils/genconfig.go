@@ -51,6 +51,11 @@ func main() {
 	// Get the App config data from Marathon.
 	templateData := haproxy.GetTemplateData(&conf, conn)
 
+	if templateData.Apps == nil || len(templateData.Apps) == 0  {
+		log.Println("Got no Apps in template data. Skipping rendering template");
+		return
+	}
+
 	// Render the template
 	newContent, err := template.RenderTemplate(conf.HAProxy.TemplatePath, string(templateContent), templateData)
 	if err != nil { log.Fatalf("Template syntax error: \n %s", err ) }
@@ -59,7 +64,7 @@ func main() {
 	log.Println("===============Begin HAProxy config===========================");
 	log.Println(newContent);
 	log.Println("===============End HAProxy config===========================");
-	
+
 }
 
 func configureLog() {
