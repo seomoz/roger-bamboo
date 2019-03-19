@@ -1,10 +1,12 @@
 {
   "Marathon": {
-    "Endpoint": "http://marathon1:8080,http://marathon2:8080,http://marathon3:8080"
+    "Endpoint": "http://marathon1:8080,http://marathon2:8080,http://marathon3:8080",
+    "PollingInterval": 30
   },
 
   "Bamboo": {
     "Endpoint": "http://haproxy-ip-address:8000",
+    "RegisterCallback": true,
     "Zookeeper": {
       "Host": "localhost",
       "Path": "/marathon-haproxy/state",

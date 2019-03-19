@@ -1,10 +1,12 @@
 {
   "Marathon": {
-    "Endpoint": "http://machine01:8080,http://machine02:8080,http://machine03:8080"
+    "Endpoint": "http://machine01:8080,http://machine02:8080,http://machine03:8080",
+    "PollingInterval": 30
   },
 
   "Bamboo": {
     "Endpoint": "http://localhost:8000",
+    "RegisterCallback": true,
     "Zookeeper": {
       "Host": "machine01,machine02,machine03",
       "Path": "/bamboo/state",

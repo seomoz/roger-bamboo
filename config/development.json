@@ -1,10 +1,12 @@
 {
   "Marathon": {
-    "Endpoint": "http://localhost:8080"
+    "Endpoint": "http://localhost:8080",
+    "PollingInterval": 30
   },
 
   "Bamboo": {
     "Endpoint": "http://10.0.2.2:8000",
+    "RegisterCallback": true,
     "Zookeeper": {
       "Host": "localhost",
       "Path": "/foo",
