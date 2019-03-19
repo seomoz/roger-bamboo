@@ -125,7 +125,11 @@ func initServer(conf *configuration.Configuration, conn *zk.Conn, eventBus *even
 	goji.Get("/*", http.FileServer(http.Dir(path.Join(executableFolder(), "webapp"))))
 
 	log.Println("in initServer 4")
-	registerMarathonEvent(conf)
+	if conf.Bamboo.RegisterCallback {
+		registerMarathonEvent(conf)
+	} else {
+		log.Println("Skip registering the Bamboo callback with Marathon")
+	}
 
 	goji.Serve()
 }
