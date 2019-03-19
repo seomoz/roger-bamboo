@@ -73,7 +73,11 @@ func main() {
 	log.Println("Registered handlers")
 
 	// Start periodic config updates
-	ticker := time.Tick(30 * time.Second)
+	if conf.Marathon.PollingInterval < 1 {
+		log.Println("Marathon.PollingInterval must be at least 1 second, resetting to 30 second default")
+		conf.Marathon.PollingInterval = 30
+	}
+	ticker := time.Tick(time.Duration(conf.Marathon.PollingInterval) * time.Second)
 	go func() {
 		for {
 			<-ticker
